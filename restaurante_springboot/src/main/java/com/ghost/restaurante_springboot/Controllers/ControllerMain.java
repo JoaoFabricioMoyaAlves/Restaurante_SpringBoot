@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 
+
 @Controller
 public class ControllerMain {
     
@@ -13,5 +14,11 @@ public ModelAndView main() {
     ModelAndView mv = new ModelAndView("index");
     return mv;
 }
+
+@GetMapping("/test")
+public String getMethodName() {
+    return "index";
+}
+
 
 }
