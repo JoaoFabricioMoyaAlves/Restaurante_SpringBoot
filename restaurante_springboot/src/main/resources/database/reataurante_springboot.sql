@@ -1,4 +1,8 @@
+
+-- criando o data base né rs
+
 create database restaurante_springboot;
+
 use restaurante_springboot;
 
 create table clientes (
@@ -54,4 +58,4 @@ create table itens_pedido (
     quantidade int not null default 1 check (quantidade > 0),
     preco_unitario decimal(10,2) not null,
     observacao varchar(200)
-);
+);      
