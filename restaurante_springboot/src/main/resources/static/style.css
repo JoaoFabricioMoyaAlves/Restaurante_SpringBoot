@@ -1,0 +1,555 @@
+/* ==================================== */
+/* 🎨 1. Variáveis Globais e Reset */
+/* ==================================== */
+:root {
+    /* Cores */
+    --cor-principal: #FF4500; /* Laranja/Vermelho Vibrante (para botões, destaques) */
+    --cor-secundaria: #32CD32; /* Verde para sucesso (como status ABERTO) */
+    --cor-fundo: #1E1E1E; /* Cinza Escuro Quase Preto (fundo geral) */
+    --cor-painel-fundo: #2A2A2A; /* Cinza Mais Claro (fundo dos painéis) */
+    --cor-elemento-fundo: #383838; /* Fundo de inputs e itens de lista */
+    --cor-texto: #FFFFFF; /* Branco para texto padrão */
+    --cor-texto-secundario: #AAAAAA; /* Cinza claro para labels */
+    --cor-destaque: #FFD700; /* Amarelo/Dourado (para total, valor) */
+    --cor-perigo: #DC143C; /* Vermelho Escuro (para botão de exclusão, status FINALIZADO) */
+    --cor-borda-escura: #3c3c3c; /* Borda de separação escura */
+
+    /* Espaçamento */
+    --espacamento-padrao: 1rem; /* 16px */
+
+    /* Borda */
+    --borda-raio: 8px;
+
+    /* Sombra */
+    --sombra-painel: 0 4px 10px rgba(0, 0, 0, 0.6);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif; /* Fonte moderna e legível */
+}
+
+/* Importação da Fonte (Ajustado) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+body {
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* ==================================== */
+/* 📐 2. Layout Principal (CSS Grid) */
+/* ==================================== */
+.desktop-container {
+    /* 5 colunas: 1 para o menu lateral (180px) + 4 para os painéis (flexíveis) */
+    grid-template-columns: 180px repeat(4, 1fr); 
+    grid-template-rows: auto;
+    gap: var(--espacamento-padrao);
+    padding: var(--espacamento-padrao);
+    display: grid; /* Necessário para a Grid funcionar */
+}
+
+/* Painel Base */
+.painel {
+    background-color: var(--cor-painel-fundo);
+    border-radius: var(--borda-raio);
+    box-shadow: var(--sombra-painel);
+    padding: var(--espacamento-padrao);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Posições dos Painéis na Grid (Conforme o original) */
+.desktop-1 { grid-column: 1; grid-row: 1 / span 3; min-height: 97vh; }
+.desktop-10 { grid-column: 2; grid-row: 1; } /* Vendas Hoje */
+.desktop-8 { grid-column: 3; grid-row: 1; } /* Pedidos Abertos */
+.desktop-5 { grid-column: 4; grid-row: 1; } /* Novos Clientes */
+.desktop-2 { grid-column: 5; grid-row: 1; } /* Estoque Baixo */
+.desktop-9 { grid-column: 2; grid-row: 2; } /* Top 5 Produtos */
+.desktop-6 { grid-column: 3; grid-row: 2; } /* Transações Recentes */
+.desktop-7 { grid-column: 4; grid-row: 2; } /* Pedidos Finalizados */
+.desktop-4 { grid-column: 5; grid-row: 2; } /* Detalhes do Pedido/Ações */
+
+
+/* ==================================== */
+/* 📱 3. Menu Lateral (Desktop - 1) */
+/* ==================================== */
+.menu-lateral {
+    background-color: #333333;
+    padding: 0;
+}
+
+.menu-lateral-header {
+    background-color: var(--cor-principal);
+    color: var(--cor-texto);
+    text-align: center;
+    padding: var(--espacamento-padrao) 0;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: var(--borda-raio) var(--borda-raio) 0 0;
+    margin-bottom: var(--espacamento-padrao);
+}
+
+.menu-lateral nav a {
+    display: block;
+    padding: 0.75rem var(--espacamento-padrao);
+    color: var(--cor-texto);
+    text-decoration: none;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+    font-weight: 500;
+}
+
+.menu-lateral nav a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ==================================== */
+/* 📦 4. Componentes Comuns */
+/* ==================================== */
+
+/* --- 4.1 Cabeçalhos e Títulos --- */
+.painel h3 {
+    font-size: 1.1rem;
+    margin-bottom: var(--espacamento-padrao);
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--cor-principal);
+    color: var(--cor-destaque);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* --- 4.2 Listas de Itens (Vendas, Clientes, Pedidos) --- */
+.lista-scroll {
+    overflow-y: auto;
+    flex-grow: 1;
+    padding-right: 5px;
+}
+
+.lista-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.5rem;
+    margin-bottom: 0.5rem;
+    background-color: var(--cor-elemento-fundo);
+    border-radius: 4px;
+    font-size: 0.95rem;
+}
+
+.item-nome {
+    font-weight: 600;
+    flex-grow: 1;
+}
+
+.item-valor {
+    color: var(--cor-destaque);
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+/* --- 4.3 Status e Destaques --- */
+.status-aberto {
+    color: var(--cor-secundaria);
+    font-weight: bold;
+    background-color: rgba(50, 205, 50, 0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.status-finalizado {
+    color: var(--cor-perigo);
+    font-weight: bold;
+    background-color: rgba(220, 20, 60, 0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.total-valor {
+    font-size: 1.5rem;
+    color: var(--cor-destaque);
+    font-weight: bold;
+    text-align: right;
+    margin-top: var(--espacamento-padrao);
+}
+
+/* --- 4.4 Botões --- */
+.btn {
+    padding: 0.75rem var(--espacamento-padrao);
+    border: none;
+    border-radius: var(--borda-raio);
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: background-color 0.3s ease;
+    margin-top: var(--espacamento-padrao);
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-principal {
+    background-color: var(--cor-principal);
+    color: var(--cor-texto);
+}
+
+.btn-principal:hover {
+    background-color: #E53800;
+}
+
+.btn-adicionar {
+    background-color: var(--cor-secundaria);
+    color: var(--cor-texto);
+    padding: 0.5rem var(--espacamento-padrao);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.btn-adicionar:hover {
+    background-color: #2AAA2A;
+}
+
+.btn-remover {
+    background-color: var(--cor-perigo);
+    color: var(--cor-texto);
+    width: 25px;
+    height: 25px;
+    padding: 0;
+    margin-left: 10px;
+    border-radius: 50%;
+    line-height: 25px;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: bold;
+    transition: transform 0.2s;
+}
+
+.btn-remover:hover {
+    transform: scale(1.1);
+}
+
+/* --- 4.5 Formulários e Inputs --- */
+.formulario {
+    padding-top: var(--espacamento-padrao);
+}
+
+.formulario-grupo {
+    margin-bottom: var(--espacamento-padrao);
+}
+
+.formulario input[type="text"],
+.formulario input[type="number"],
+.formulario select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    background-color: var(--cor-elemento-fundo);
+    color: var(--cor-texto);
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.formulario input:focus,
+.formulario select:focus {
+    outline: none;
+    border-color: var(--cor-principal);
+    box-shadow: 0 0 5px rgba(255, 69, 0, 0.5);
+}
+
+.formulario label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+}
+
+.formulario-inline {
+    display: flex;
+    gap: var(--espacamento-padrao);
+}
+
+.formulario-inline>div {
+    flex-grow: 1;
+}
+
+/* ==================================== */
+/* ✨ 5. Estilização Adicional e Detalhes */
+/* ==================================== */
+
+/* --- 5.1 Tabela de Detalhes (Geral) --- */
+.tabela-detalhes, .tabela-clientes, .tabela-pedidos, .tabela-itens {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: var(--espacamento-padrao);
+    font-size: 0.95rem;
+    color: var(--cor-texto);
+}
+
+.tabela-detalhes th,
+.tabela-detalhes td,
+.tabela-clientes th,
+.tabela-clientes td,
+.tabela-pedidos th,
+.tabela-pedidos td,
+.tabela-itens th,
+.tabela-itens td {
+    padding: 0.7rem 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--cor-borda-escura);
+}
+
+.tabela-detalhes th,
+.tabela-clientes th,
+.tabela-pedidos th,
+.tabela-itens th {
+    background-color: var(--cor-elemento-fundo);
+    color: var(--cor-texto-secundario);
+    font-size: 0.9rem;
+    font-weight: normal;
+    text-transform: uppercase;
+}
+
+.tabela-detalhes tr:hover,
+.tabela-clientes tr:hover,
+.tabela-pedidos tr:hover,
+.tabela-itens tr:hover {
+    background-color: #333333;
+}
+
+/* --- 5.2 Estilos Específicos de Pedidos/Listas --- */
+
+.btn-novo-cliente { /* Aplicando o estilo btn-principal, mas mantendo o nome de classe */
+    @extend .btn-principal; /* Extensão conceitual */
+    display: inline-block;
+    margin-bottom: 20px;
+    margin-top: 0;
+}
+
+/* Títulos de Conteúdo (Uso no cadastro/listagem) */
+.desktop-10 h2, .desktop-11 h2 {
+    color: var(--cor-principal); 
+    border-bottom: 2px solid var(--cor-borda-escura);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+
+/* --- 5.3 Estilos da Tela de Edição/Vendas (Desktop-4) --- */
+/* Unificando o formulário de adição de item */
+form.adicionar-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
+    padding: 15px;
+    background-color: #333333; /* Fundo escuro para o bloco de adição */
+    border: 1px solid #444444;
+    border-radius: 6px;
+    margin-bottom: var(--espacamento-padrao);
+}
+
+form.adicionar-item label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    width: 100%;
+}
+
+form.adicionar-item > div {
+    flex: 1;
+    min-width: 120px;
+}
+
+form.adicionar-item select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    background-color: var(--cor-elemento-fundo);
+    color: var(--cor-texto);
+    box-sizing: border-box;
+}
+
+form.adicionar-item button {
+    background-color: var(--cor-secundaria);
+    color: var(--cor-texto);
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-grow: 0;
+    transition: background-color 0.3s;
+}
+
+.resumo-total h4 {
+    text-align: right;
+    font-size: 24px;
+    color: var(--cor-destaque);
+    padding-top: 10px;
+    border-top: 2px solid var(--cor-borda-escura);
+    margin-top: 15px;
+}
+
+.botoes-finalizacao {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding-top: 10px;
+    border-top: 1px solid var(--cor-borda-escura);
+}
+
+/* Botão Fechar Pedido (Dark Mode) */
+.btn-fechar {
+    background-color: var(--cor-perigo);
+    color: var(--cor-texto);
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.btn-fechar:hover {
+    background-color: #A91032; /* Vermelho mais escuro */
+}
+
+.btn-voltar {
+    background-color: #6c757d;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.btn-voltar:hover {
+    background-color: #5a6268;
+}
+
+
+/* --- 5.4 Estilos de Mensagens --- */
+.alerta {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    border-left: 5px solid;
+}
+
+.sucesso {
+    background-color: rgba(50, 205, 50, 0.1);
+    border-color: var(--cor-secundaria);
+    color: var(--cor-secundaria);
+}
+
+.erro {
+    background-color: rgba(220, 20, 60, 0.1);
+    border-color: var(--cor-perigo);
+    color: var(--cor-perigo);
+}
+
+
+/* ==================================== */
+/* 📈 6. Responsividade */
+/* ==================================== */
+
+/* O media query de responsividade original foi mantido, pois estava funcional para o layout Grid. */
+
+@media (max-width: 1200px) {
+    .desktop-container {
+        grid-template-columns: 150px repeat(3, 1fr);
+        gap: 0.75rem;
+    }
+
+    .desktop-1 { grid-column: 1; grid-row: 1 / span 4; }
+    .desktop-10 { grid-column: 2; grid-row: 1; }
+    .desktop-8 { grid-column: 3; grid-row: 1; }
+    .desktop-5 { grid-column: 4; grid-row: 1; }
+    .desktop-2 { grid-column: 2; grid-row: 2; }
+    /* desktop-11 não está mais no Grid, então é ignorado aqui. */
+    .desktop-9 { grid-column: 2; grid-row: 3; }
+    .desktop-6 { grid-column: 3; grid-row: 3; }
+    .desktop-7 { grid-column: 4; grid-row: 3; }
+    .desktop-4 { grid-column: 3 / span 2; grid-row: 2; } /* Ajuste a posição para preencher melhor */
+}
+
+@media (max-width: 768px) {
+    .desktop-container {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
+
+    .menu-lateral {
+        position: relative;
+        grid-column: 1;
+        grid-row: 1;
+        min-height: auto;
+        border-radius: var(--borda-raio);
+    }
+
+    .painel {
+        grid-column: 1 !important;
+        grid-row: auto !important;
+    }
+
+    .menu-lateral nav {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+    }
+
+    .menu-lateral nav a {
+        padding: 0.5rem;
+        flex-basis: 45%;
+        text-align: center;
+    }
+
+    .menu-lateral-header {
+        margin-bottom: 0;
+        border-radius: var(--borda-raio) var(--borda-raio) 0 0;
+    }
+
+    form.adicionar-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    form.adicionar-item > div,
+    form.adicionar-item button {
+        min-width: auto;
+        width: 100%;
+    }
+}
+/* ==================================== */
+/* 🚀 7. Otimização e Desempenho (Rolagem) */
+/* ==================================== */
+.lista-scroll::-webkit-scrollbar { width: 8px; }
+.lista-scroll::-webkit-scrollbar-track { background: #383838; border-radius: 10px; }
+.lista-scroll::-webkit-scrollbar-thumb { background: var(--cor-principal); border-radius: 10px; }
+.lista-scroll::-webkit-scrollbar-thumb:hover { background: #E53800; }
+/* ==================================== */
+/* ♿ 8. Acessibilidade (A11Y) */
+/* ==================================== */
+a:focus, button:focus, input:focus, select:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 69, 0, 0.5);
+    border-color: var(--cor-principal);
+}
+
+.btn:active, .btn-remover:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+}
+/* ==================================== */
+/* 🛠️ 9. Utilitários (Não Removidos) */
+/* ==================================== */
+.text-right { text-align: right !important; }
+.text-center { text-align: center !important; }

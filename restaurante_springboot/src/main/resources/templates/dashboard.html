@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestão - Dashboard</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/style.css}"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+    <div class="desktop-container">
+        
+        <div class="painel menu-lateral desktop-1">
+            <div class="menu-lateral-header">
+                <i class="fas fa-chart-line"></i> SYS-GESTOR
+            </div>
+            
+            <nav>
+                <a th:href="@{/dashboard}"><i class="fas fa-home"></i> Dashboard</a>
+                <a th:href="@{/pedidos}"><i class="fas fa-clipboard-list"></i> Pedidos</a>
+                <a th:href="@{/vendas}"><i class="fas fa-cash-register"></i> Vendas</a>
+                <a th:href="@{/clientes}"><i class="fas fa-users"></i> Clientes</a>
+                <a th:href="@{/produtos}"><i class="fas fa-cube"></i> Produtos</a>
+                <a th:href="@{/estoque}"><i class="fas fa-warehouse"></i> Estoque</a>
+              </nav>
+            
+            <div class="lista-item" style="margin-top: auto; border-top: 1px solid #383838;">
+                <span class="item-nome"><i class="fas fa-user-circle"></i> Usuário Logado</span>
+            </div>
+        </div>
+        
+        <div class="painel desktop-10">
+            <h3>Vendas Hoje</h3>
+            <div class="total-valor">R$ <span th:text="${vendasHojeTotal ?: '0.00'}">0.00</span></div>
+            <p style="color: #AAAAAA; font-size: 0.9rem;">Total de <span th:text="${vendasHojeCount ?: 0}">0</span> transações.</p>
+        </div>
+        
+        <div class="painel desktop-8">
+            <h3>Pedidos Abertos</h3>
+            <div class="lista-scroll">
+                <div class="lista-item" th:each="pedido : ${pedidosAbertos}">
+                    <span class="item-nome" th:text="${'#' + pedido.id}">#12345</span>
+                    <span class="status-aberto">ABERTO</span>
+                    <span class="item-valor" th:text="${'R$ ' + pedido.valorTotal}">R$ 45.90</span>
+                </div>
+            </div>
+            <a th:href="@{/pedidos}" class="btn btn-adicionar" style="text-align: center;">Ver Todos</a>
+        </div>
+        
+        <div class="painel desktop-5">
+            <h3>Novos Clientes <a th:href="@{/clientes/novo}" class="btn btn-adicionar"><i class="fas fa-plus"></i></a></h3>
+            <div class="lista-scroll">
+                <div class="lista-item" th:each="cliente : ${novosClientes}">
+                    <span class="item-nome" th:text="${cliente.nome}">João Silva</span>
+                    <span class="item-valor" th:text="${cliente.cidade}">São Paulo</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="painel desktop-2">
+            <h3>Estoque Baixo</h3>
+            <div class="lista-scroll">
+                <div class="lista-item" th:each="produto : ${estoqueBaixo}">
+                    <span class="item-nome" th:text="${produto.nome}">Café Expresso</span>
+                    <span class="item-valor" th:text="${produto.quantidade + ' UN'}">5 UN</span>
+                </div>
+            </div>
+            <a th:href="@{/estoque}" class="btn btn-principal" style="text-align: center;">Gerenciar Estoque</a>
+        </div>
+        
+        <div class="painel desktop-9">
+            <h3>Top 5 Produtos</h3>
+            <div class="lista-scroll">
+                 <div class="lista-item" th:each="item : ${topProdutos}">
+                    <span class="item-nome" th:text="${item.produto.nome}">Coxinha de Frango</span>
+                    <span class="item-valor" th:text="${item.quantidade + ' Vendas'}">120 Vendas</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="painel desktop-6">
+            <h3>Transações Recentes</h3>
+            <div class="lista-scroll">
+                <div class="lista-item" th:each="transacao : ${transacoesRecentes}">
+                    <span class="item-nome" th:text="${transacao.tipo}">Venda PDV</span>
+                    <span th:classappend="${transacao.status == 'FINALIZADO' ? 'status-finalizado' : 'status-aberto'}" th:text="${transacao.status}">FINALIZADO</span>
+                    <span class="item-valor" th:text="${'R$ ' + transacao.valor}">R$ 80.00</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="painel desktop-7">
+            <h3>Pedidos Finalizados</h3>
+            <div class="lista-scroll">
+                <div class="lista-item" th:each="pedido : ${pedidosFinalizados}">
+                    <span class="item-nome" th:text="${'#' + pedido.id}">#12340</span>
+                    <span class="status-finalizado">FINALIZADO</span>
+                    <span class="item-valor" th:text="${'R$ ' + pedido.valorTotal}">R$ 22.50</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="painel desktop-4">
+            <th:block th:if="${pedidoSelecionado}">
+                <h3>Detalhes do Pedido <span th:text="${pedidoSelecionado.id}" style="color: var(--cor-principal);">#000</span></h3>
+                
+                <div class="lista-scroll" style="max-height: 200px;">
+                    <div class="lista-item" th:each="item : ${pedidoSelecionado.itens}">
+                        <span class="item-nome" th:text="${item.nome}">Pizza Grande</span>
+                        <span class="item-valor" th:text="${'R$ ' + item.valor}">R$ 45.00</span>
+                    </div>
+                </div>
+
+                <div class="detalhes-pedido-footer">
+                    <div>
+                        <p style="font-size: 0.9rem; color: #AAAAAA;">Total do Pedido</p>
+                        <div class="total-valor" th:text="${'R$ ' + pedidoSelecionado.valorTotal}">R$ 150,00</div>
+                    </div>
+                    <div class="qrcode-container">
+                        
+
+[Image of QR Code]
+
+                    </div>
+                </div>
+            </th:block>
+            
+            <th:block th:unless="${pedidoSelecionado}">
+                <h3>Detalhes do Pedido</h3>
+                <p style="color: #AAAAAA; text-align: center; margin-top: 30%;">Nenhum pedido selecionado.</p>
+            </th:block>
+        </div>
+        
+    </div>
+
+</body>
+</html>

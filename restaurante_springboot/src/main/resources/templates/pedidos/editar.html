@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Pedido #[[${pedido.id}]]</title>
+    <link rel="stylesheet" th:href="@{/style.css}"> 
+</head>
+<body>
+
+    <div class="container">
+        
+        <h2>Detalhes do Pedido #<span th:text="${pedido.id}">123</span></h2>
+        
+        <div class="detalhes-pedido">
+            <p>Mesa/Cliente: <strong th:text="${pedido.cliente.nome}">Nome do Cliente</strong></p>
+            <p>Valor Total: <strong th:text="${#numbers.formatCurrency(pedido.valorTotal)}">R$ 0,00</strong></p>
+            <p>Status: 
+                <span th:if="${pedido.status}">ABERTO</span>
+                <span th:unless="${pedido.status}">FECHADO</span>
+            </p>
+        </div>
+
+        <hr>
+        <h3>Adicionar Novo Item</h3>
+        
+        <form th:action="@{/pedidos/adicionar-item/{id}(id=${pedido.id})}" method="post" class="adicionar-item">
+            
+            <div>
+                <label for="pratoId">Prato:</label>
+                <select id="pratoId" name="pratoId" required>
+                    <option value="">-- Selecione um Prato --</option>
+                    <option th:each="prato : ${pratos}" 
+                            th:value="${prato.id}" 
+                            th:text="${prato.nome} + ' - ' + ${#numbers.formatCurrency(prato.precoVenda)}">
+                        Prato - R$ 99.99
+                    </option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="quantidade">Qtd:</label>
+                <input type="number" id="quantidade" name="quantidade" value="1" min="1" required>
+            </div>
+
+            <div>
+                <label for="observacao">Obs. (opcional):</label>
+                <input type="text" id="observacao" name="observacao" maxlength="200">
+            </div>
+
+            <button type="submit">Adicionar</button>
+        </form>
+
+        <hr>
+        <h3>Itens no Pedido</h3>
+        <table class="tabela-itens">
+            <thead>
+                <tr>
+                    <th>Prato</th>
+                    <th class="text-center">Qtd</th>
+                    <th class="text-right">Preço Unitário</th>
+                    <th class="text-right">Subtotal</th>
+                    <th>Obs.</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item : ${pedido.itens}"> 
+                    <td th:text="${item.prato.nome}">Prato A</td>
+                    <td th:text="${item.quantidade}" class="text-center">1</td>
+                    <td th:text="${#numbers.formatCurrency(item.precoUnitario)}" class="text-right">R$ 10,00</td>
+                    <td th:text="${#numbers.formatCurrency(item.calcularSubtotal())}" class="text-right">R$ 10,00</td>
+                    <td th:text="${item.observacao ?: '---'}">Sem observação</td>
+                    <td>
+                        <a href="#" style="color: red; text-decoration: none;">X Remover</a>
+                    </td>
+                </tr>
+                <tr th:if="${pedido.itens.empty}">
+                    <td colspan="6" class="text-center">Nenhum item adicionado ainda.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="acoes">
+            <a th:href="@{/pedidos}" class="btn-voltar">← Voltar para a Lista</a>
+            <button th:if="${pedido.status}" class="btn-fechar">Fechar Pedido e Pagar</button>
+        </div>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Novo Pedido</title>
+    <link rel="stylesheet" th:href="@{/style.css}"> 
+</head>
+<body>
+
+    <div class="desktop-container">
+        
+        <div class="desktop-11"> 
+            <h2>Abrir Novo Pedido</h2>
+            
+            <form th:action="@{/pedidos/iniciar}" th:object="${pedido}" method="post">
+                
+                <label for="cliente">Selecionar Cliente:</label>
+                <select id="cliente" th:field="*{cliente}" required> 
+                    <option value="">-- Selecione um Cliente --</option>
+                    <option th:each="cliente : ${clientes}" 
+                            th:value="${cliente.id}" 
+                            th:text="${cliente.nome}">
+                        Nome do Cliente
+                    </option>
+                </select>
+
+                <input type="hidden" th:field="*{dataPedido}" /> 
+                
+                <input type="hidden" th:field="*{status}" />
+                <input type="hidden" th:field="*{valorTotal}" />
+
+                <button type="submit" class="btn-adicionar">Iniciar Pedido</button>
+            </form>
+            
+            <a th:href="@{/pedidos}" class="btn-voltar">Voltar para a Lista</a>
+        </div>
+    </div>
+</body>
+</html>
