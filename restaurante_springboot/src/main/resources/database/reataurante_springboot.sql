@@ -152,42 +152,63 @@ create table itens_pedido (
 
 */
 
+delimiter //
+
 create procedure atualizar_estoque(
     in p_prato_id int,
     in p_quantidade int,
-    in p_operacao TINYINT(1))
-    begin
-    -- aqui eu declaro as variaveis que o procedimetno ira usar
-  declare v_ingrediente_id int;
-  declare v_qde_necessaria float;
+    in p_operacao TINYINT(1)
+)
+begin
+    -- aqui eu declaro as variaveis que o procedimento ira usar
+    declare v_ingrediente_id int;
+    declare v_qde_necessaria float;
+    declare done boolean default false;
 
-   -- aqui eu vou criar o cursor  para percorrer a composicao embusca dos ingredientes
-   declare c cursor for 
-   select ingrediente_id, quantidade 
-   from composicao
-   where prato_id = p_prato_id;
+    -- aqui eu vou criar o cursor  para percorrer a composicao em busca dos ingredientes
+    declare c cursor for 
+        select ingrediente_id, quantidade 
+        from composicao
+        where prato_id = p_prato_id;
 
-   open c;
-   fetch c into v_ingrediente_id, v_qde_necessaria;
+    -- aqui eu crio um handler (tratador) pra quando o cursor chegar no fim dos dados (not found)
+    declare continue handler for not found set done = true;
 
-   while @@fetch_status = 0 do
-   --saida,  no caso quando o cliente compra e vai sair do estoque
-   if p_operacao = 0 then     
-   update ingredientes
-   set qt_estoque = qt_estoque - (v_qde_necessaria * p_quantidade)
-   where id = v_ingrediente_id;
-   --entrada, quando tem uma devolutiva dos ingredientes
-   else p_operacao = 1 then
-    update ingredientes
-    set qt_estoque = qt_estoque + (v_qde_necessaria * p_quantidade)
-    where id = v_ingrediente_id;
-   end if;
- --aqui ja mandamos o ponteiro para a proxima linha, se ouver uma e claro
-   fetch c into v_ingrediente_id, v_qde_necessaria;
-   end while;
-   close c;
-    end
- delimiter ;
+    -- abrindo o cursor
+    open c;
+
+    -- aqui começa o loop que vai percorrer cada ingrediente do prato
+    read_loop: loop
+        -- carrega os dados da linha atual do cursor
+        fetch c into v_ingrediente_id, v_qde_necessaria;
+
+        -- se não houver mais linhas, sai do loop
+        if done then
+            leave read_loop;
+        end if;
+
+        -- saida, no caso quando o cliente compra e vai sair do estoque
+        if p_operacao = 0 then     
+            update ingredientes
+            set qt_estoque = qt_estoque - (v_qde_necessaria * p_quantidade)
+            where id = v_ingrediente_id;
+
+        -- entrada, quando tem uma devolutiva dos ingredientes
+        else
+            update ingredientes
+            set qt_estoque = qt_estoque + (v_qde_necessaria * p_quantidade)
+            where id = v_ingrediente_id;
+        end if;
+
+        -- aqui já mandamos o ponteiro para a próxima linha (caso exista)
+    end loop;
+
+    -- fechando o cursor
+    close c;
+end //
+
+delimiter ;
+
     
 -- trigger para insert
 create trigger tr_ins_itens_pedido
