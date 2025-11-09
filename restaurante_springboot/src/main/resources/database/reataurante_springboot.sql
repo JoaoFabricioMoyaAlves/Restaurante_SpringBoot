@@ -151,104 +151,106 @@ create table itens_pedido (
     MERECIA OS 2 PONTOS SO PELO ASCII DA KUROMI EMMM !                         
 
 */
+-- ========================================
+-- PROCEDURE: atualizar_estoque
+-- ========================================
 
-delimiter //
+-- Essa procedure atualiza o estoque dos ingredientes de acordo com os pratos inseridos, deletados ou alterados
+-- Ela recebe:
+--   p_prato_id   -> o id do prato
+--   p_quantidade -> a quantidade pedida
+--   p_operacao   -> 0 = saída (pedido), 1 = entrada (remoção/cancelamento)
+-- O MySQL não tem tipo BOOLEAN, por isso usamos TINYINT(1) para representar verdadeiro/falso
 
-create procedure atualizar_estoque(
-    in p_prato_id int,
-    in p_quantidade int,
-    in p_operacao TINYINT(1)
+DELIMITER //
+
+CREATE PROCEDURE atualizar_estoque(
+    IN p_prato_id INT,
+    IN p_quantidade INT,
+    IN p_operacao TINYINT(1)
 )
-begin
-    -- aqui eu declaro as variaveis que o procedimento ira usar
-    declare v_ingrediente_id int;
-    declare v_qde_necessaria float;
-    declare done boolean default false;
+BEGIN
+    -- Declarações de variáveis
+    DECLARE v_ingrediente_id INT;
+    DECLARE v_qde_necessaria FLOAT;
+    DECLARE done BOOLEAN DEFAULT FALSE;
 
-    -- aqui eu vou criar o cursor  para percorrer a composicao em busca dos ingredientes
-    declare c cursor for 
-        select ingrediente_id, quantidade 
-        from composicao
-        where prato_id = p_prato_id;
+    -- Cursor
+    DECLARE c CURSOR FOR 
+        SELECT ingrediente_id, quantidade
+        FROM composicao
+        WHERE prato_id = p_prato_id;
 
-    -- aqui eu crio um handler (tratador) pra quando o cursor chegar no fim dos dados (not found)
-    declare continue handler for not found set done = true;
+    -- Handler
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 
-    -- abrindo o cursor
-    open c;
+    -- Abre o cursor
+    OPEN c;
 
-    -- aqui começa o loop que vai percorrer cada ingrediente do prato
-    read_loop: loop
-        -- carrega os dados da linha atual do cursor
-        fetch c into v_ingrediente_id, v_qde_necessaria;
+    read_loop: LOOP
+        FETCH c INTO v_ingrediente_id, v_qde_necessaria;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
 
-        -- se não houver mais linhas, sai do loop
-        if done then
-            leave read_loop;
-        end if;
+        -- 0 = saída, 1 = entrada
+        IF p_operacao = 0 THEN
+            UPDATE ingredientes
+            SET qt_estoque = qt_estoque - (v_qde_necessaria * p_quantidade)
+            WHERE id = v_ingrediente_id;
+        ELSE
+            UPDATE ingredientes
+            SET qt_estoque = qt_estoque + (v_qde_necessaria * p_quantidade)
+            WHERE id = v_ingrediente_id;
+        END IF;
+    END LOOP;
 
-        -- saida, no caso quando o cliente compra e vai sair do estoque
-        if p_operacao = 0 then     
-            update ingredientes
-            set qt_estoque = qt_estoque - (v_qde_necessaria * p_quantidade)
-            where id = v_ingrediente_id;
+    CLOSE c;
+END //
 
-        -- entrada, quando tem uma devolutiva dos ingredientes
-        else
-            update ingredientes
-            set qt_estoque = qt_estoque + (v_qde_necessaria * p_quantidade)
-            where id = v_ingrediente_id;
-        end if;
+DELIMITER ;
 
-        -- aqui já mandamos o ponteiro para a próxima linha (caso exista)
-    end loop;
+DELIMITER //
 
-    -- fechando o cursor
-    close c;
-end //
+CREATE TRIGGER tr_ins_itens_pedido
+AFTER INSERT ON itens_pedido
+FOR EACH ROW
+BEGIN
+    /* 
+      o mysql so suporta o modo linha por linha, por isso esse for each row
+      ele executa esse trigger para cada linha afetada, se eu fizer um insert de 10 linhas
+      ele vai rodar 1x para cada uma das linhas e nao em apenas 1, no caso a primeira
+    */
+    CALL atualizar_estoque(NEW.prato_id, NEW.quantidade, 0);
+END //
 
-delimiter ;
+DELIMITER ;
 
-    
--- trigger para insert
-create trigger tr_ins_itens_pedido
-after insert on itens_pedido
-/*o mysql so suporta o modo linha por linha, por isso esse for each row
-  ele executa esse trigger para cada linha afetada, se eu fizer um insert de 10 linhas
-  ele vai rodar 1x para cada uma das linhas e nao em apenas 1, no caso a primeira
-*/
-for each row 
-begin
-   call atualizar_estoque(NEW.prato_id, NEW.quantidade, 0);
-end
-delimiter ;
+DELIMITER //
 
--- as siglas NEW e OLD sao para o banco pegar o novo (new) valor q ta sendo adicionado
---e o OLD (antigo) o que acabou de ser deletado
+CREATE TRIGGER tr_del_itens_pedido
+AFTER DELETE ON itens_pedido
+FOR EACH ROW
+BEGIN
+    -- aqui é quando o pedido é deletado, ou seja, o estoque volta (entrada)
+    CALL atualizar_estoque(OLD.prato_id, OLD.quantidade, 1);
+END //
 
---estou claramente fazendo essas anotacoes um pouco embregado professor
+DELIMITER ;
 
+DELIMITER //
 
--- trigger para delete
-create trigger tr_del_itens_pedido
-after delete on itens_pedido
-for each row 
-begin
- call atualizar_estoque(OLD.prato_id, OLD_quantidade,1);
-end
-delimiter ;
+CREATE TRIGGER tr_update_itens_pedido
+AFTER UPDATE ON itens_pedido
+FOR EACH ROW
+BEGIN
+    -- verifica se a quantidade mudou
+    IF NEW.quantidade != OLD.quantidade THEN
+        -- devolve o que foi tirado antes
+        CALL atualizar_estoque(OLD.prato_id, OLD.quantidade, 1);
+        -- desconta a nova quantidade
+        CALL atualizar_estoque(NEW.prato_id, NEW.quantidade, 0);
+    END IF;
+END //
 
---trigger para update
-create trigger tr_update_itens_pedido
-after update on itens_pedido
-for each row
-begin
-  --verifica se a quantidade mudou
- if NEW.quantidade != OLD.quantidade then
-  --devolve o que foi tirado 
- call atualizar_estoque(OLD.prato_id, OLD.quantidade, 0);
-  --desconta a nova quantidade
- call atualizar_estoque(NEW.prato_id, NEW.quantidade, 1);
- end if;
-end
-delimiter ;
+DELIMITER ;
