@@ -17,16 +17,20 @@ public class Ingrediente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false, unique = true)
-    private String nome;
+    // Coluna 'descricao' no banco
+    @Column(name = "descricao", nullable = false, unique = true)
+    private String descricao;
 
-    // Relacionamento Muitos para Um: Muitos ingredientes usam uma Unidade de Medida
+    // Preço unitário (coluna valor_unt)
+    @Column(name = "valor_unt", nullable = false, precision = 10, scale = 2)
+    private BigDecimal valorUnt = BigDecimal.ZERO;
+
+    // Unidade de medida (FK)
     @ManyToOne
     @JoinColumn(name = "unidade_medida_id", nullable = false)
     private UnidadeMedida unidadeMedida;
 
-    // ESTOQUE: Quantidade atual em estoque
-    // Deve ser um número decimal (BigDecimal) para precisão de pesos/litros
-    @Column(name = "quantidade_estoque", nullable = false, precision = 10, scale = 3)
-    private BigDecimal quantidadeEstoque = BigDecimal.ZERO; 
+    // Estoque em banco: qt_estoque
+    @Column(name = "qt_estoque", nullable = false, precision = 10, scale = 3)
+    private BigDecimal qtEstoque = BigDecimal.ZERO;
 }

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Ingredientes</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+
+<h1>Lista de Ingredientes</h1>
+
+<a th:href="@{/ingredientes/novo}" class="btn">➕ Novo Ingrediente</a>
+
+<table border="1" cellspacing="0" cellpadding="5">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Unidade de Medida</th>
+            <th>Quantidade em Estoque</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="ingrediente : ${ingredientes}">
+            <td th:text="${ingrediente.id}">1</td>
+            <td th:text="${ingrediente.nome}">Arroz</td>
+            <td th:text="${ingrediente.unidadeMedida.nome}">Kg</td>
+            <td th:text="${ingrediente.quantidadeEstoque}">10.000</td>
+            <td>
+                <a th:href="@{'/ingredientes/editar/' + ${ingrediente.id}}">✏️ Editar</a> |
+                <a th:href="@{'/ingredientes/excluir/' + ${ingrediente.id}}"
+                   onclick="return confirm('Deseja excluir este ingrediente?');">🗑️ Excluir</a>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+</body>
+</html>

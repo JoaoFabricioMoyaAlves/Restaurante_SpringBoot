@@ -1,159 +1,177 @@
 package com.ghost.restaurante_springboot.services;
 
 import com.ghost.restaurante_springboot.models.ItemPedido;
+import com.ghost.restaurante_springboot.models.ItemPedidoId;
 import com.ghost.restaurante_springboot.models.Pedido;
 import com.ghost.restaurante_springboot.models.Prato;
-import com.ghost.restaurante_springboot.repositories.ItemPedidoRepository; 
+import com.ghost.restaurante_springboot.repositories.ClienteRepository;
+import com.ghost.restaurante_springboot.repositories.ItemPedidoRepository;
 import com.ghost.restaurante_springboot.repositories.PedidoRepository;
-import com.ghost.restaurante_springboot.repositories.PratoRepository; 
+import com.ghost.restaurante_springboot.repositories.PratoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus; 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException; 
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PedidoService {
 
     @Autowired
     private PedidoRepository pedidoRepository;
-    
-    @Autowired 
-    private PratoRepository pratoRepository; 
-    
-    @Autowired 
-    private ItemPedidoRepository itemPedidoRepository; 
 
-    // ===============================================
-    // MÉTODOS EXISTENTES E NOVOS MÉTODOS DE CÁLCULO
-    // ===============================================
+    @Autowired
+    private ItemPedidoRepository itemPedidoRepository;
+
+    @Autowired
+    private PratoRepository pratoRepository;
+
+    @Autowired
+    private ClienteRepository clienteRepository;
+
+    // ==========================================================
+    // === MÉTODOS DE OPERAÇÃO DE PEDIDOS (CRUD + ITENS)
+    // ==========================================================
 
     @Transactional
     public Pedido iniciarNovoPedido(Pedido pedido) {
-        // Assegura que o novo pedido tenha os valores iniciais corretos
-        pedido.setDataPedido(LocalDateTime.now()); 
-        pedido.setStatus(true); // Status: ABERTO
-        pedido.setValorTotal(BigDecimal.ZERO); // Valor inicial zerado
-        
+        pedido.setDataPedido(LocalDateTime.now());
+        pedido.setStatus(true); // aberto
+        if (pedido.getValorTotal() == null) {
+            pedido.setValorTotal(BigDecimal.ZERO);
+        }
         return pedidoRepository.save(pedido);
     }
 
-    public List<Pedido> buscarPedidosFechadosDeHoje() {
-        // Pega o início do dia
-        LocalDateTime hoje = LocalDate.now().atStartOfDay();
-        
-        // Busca pedidos após o início do dia e com status FECHADO (false)
-        return pedidoRepository.findByDataPedidoAfterAndStatus(hoje, false);
+    public Pedido buscarPedidoPorId(Integer id) {
+        Optional<Pedido> op = pedidoRepository.findById(id);
+        return op.orElseThrow(() -> new RuntimeException("Pedido não encontrado: " + id));
     }
 
+    @Transactional
+    public void adicionarItem(Integer pedidoId, Integer pratoId, Integer quantidade, String observacao) {
+        Pedido pedido = buscarPedidoPorId(pedidoId);
+        Prato prato = pratoRepository.findById(pratoId)
+                .orElseThrow(() -> new RuntimeException("Prato não encontrado: " + pratoId));
+
+        ItemPedidoId id = new ItemPedidoId();
+        id.setPedidoId(pedido.getId());
+        id.setPratoId(prato.getId());
+
+        Optional<ItemPedido> opItem = itemPedidoRepository.findById(id);
+        ItemPedido item;
+
+        if (opItem.isPresent()) {
+            item = opItem.get();
+            item.setQuantidade(item.getQuantidade() + quantidade);
+            if (observacao != null) item.setObservacao(observacao);
+        } else {
+            item = new ItemPedido();
+            item.setId(id);
+            item.setPedido(pedido);
+            item.setPrato(prato);
+            item.setQuantidade(quantidade);
+            item.setPrecoUnitario(prato.getPrecoVenda());
+            item.setObservacao(observacao);
+        }
+
+        itemPedidoRepository.save(item);
+
+        pedido.setValorTotal(calcularTotalDoPedido(pedido));
+        pedidoRepository.save(pedido);
+    }
+
+    @Transactional
+    public void finalizarPedido(Integer id) {
+        Pedido pedido = buscarPedidoPorId(id);
+        pedido.setStatus(false); // fechado
+        pedido.setValorTotal(calcularTotalDoPedido(pedido));
+        pedidoRepository.save(pedido);
+    }
+
+    @Transactional
+    public void cancelarPedido(Integer id) {
+        Pedido pedido = buscarPedidoPorId(id);
+
+        if (pedido.getItens() != null) {
+            for (ItemPedido item : List.copyOf(pedido.getItens())) {
+                itemPedidoRepository.delete(item);
+            }
+        }
+
+        pedido.setStatus(false);
+        pedido.setValorTotal(BigDecimal.ZERO);
+        pedidoRepository.save(pedido);
+    }
+
+    private BigDecimal calcularTotalDoPedido(Pedido pedido) {
+        Pedido p = pedidoRepository.findById(pedido.getId())
+                .orElseThrow(() -> new RuntimeException("Pedido não encontrado: " + pedido.getId()));
+
+        if (p.getItens() == null || p.getItens().isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        return p.getItens().stream()
+                .map(it -> it.getPrecoUnitario().multiply(BigDecimal.valueOf(it.getQuantidade())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    // ==========================================================
+    // === MÉTODOS PARA DASHBOARD
+    // ==========================================================
+
+    /**
+     * Calcula o total de vendas (somando valorTotal) dos pedidos fechados de hoje.
+     */
     public BigDecimal calcularTotalVendasHoje() {
-        // Lógica simples: busca todos os pedidos finalizados hoje e soma o valor
-        List<Pedido> vendasFechadas = buscarPedidosFechadosDeHoje();
-        
-        return vendasFechadas.stream()
+        LocalDateTime inicioDoDia = LocalDate.now().atStartOfDay();
+        List<Pedido> pedidos = pedidoRepository.findByDataPedidoAfterAndStatus(inicioDoDia, false);
+
+        return pedidos.stream()
                 .map(Pedido::getValorTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     /**
-     * NOVO MÉTODO NECESSÁRIO para o dashboard (vendasHojeCount).
-     * Retorna a contagem de pedidos com status FECHADO (FALSE) feitos hoje.
+     * Conta o número de pedidos fechados (status = false) de hoje.
      */
     public Long contarVendasHoje() {
-        LocalDateTime hoje = LocalDate.now().atStartOfDay();
-        
-        // Assumindo que o Repositório possui um método como countByDataPedidoAfterAndStatus
-        // Se não tiver, o método abaixo funcionará, mas será menos eficiente.
-        return pedidoRepository.countByDataPedidoAfterAndStatus(hoje, false);
+        LocalDateTime inicioDoDia = LocalDate.now().atStartOfDay();
+        return pedidoRepository.countByDataPedidoAfterAndStatus(inicioDoDia, false);
     }
-    
+
     /**
-     * NOVO MÉTODO NECESSÁRIO para o dashboard (pedidosAbertos).
-     * Retorna todos os pedidos com status ABERTO (TRUE).
+     * Busca todos os pedidos com status = true (abertos).
      */
     public List<Pedido> buscarPedidosAbertos() {
         return pedidoRepository.findByStatus(true);
     }
-    
-    /**
-     * Busca um Pedido por ID, lançando 404 se não for encontrado.
-     */
-    public Pedido buscarPedidoPorId(Integer id) {
-        return pedidoRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido não encontrado com ID: " + id));
-    }
 
     /**
-     * Adiciona um prato a um pedido existente e recalcula o valor total.
-     */
-    @Transactional
-    public void adicionarItem(Integer pedidoId, Integer pratoId, Integer quantidade, String observacao) {
-        
-        // 1. Buscar Pedido e Prato
-        Pedido pedido = buscarPedidoPorId(pedidoId);
-        Prato prato = pratoRepository.findById(pratoId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Prato não encontrado com ID: " + pratoId));
-
-        // Validação
-        if (!pedido.isStatus()) {
-            throw new IllegalStateException("Não é possível adicionar itens a um pedido que não está aberto.");
-        }
-        if (quantidade == null || quantidade <= 0) {
-            throw new IllegalArgumentException("A quantidade deve ser maior que zero.");
-        }
-        
-        // 2. Criar Novo Item
-        ItemPedido novoItem = new ItemPedido();
-        
-        // Configura as chaves e associa as entidades
-        novoItem.setPedido(pedido); 
-        novoItem.setPrato(prato);    
-
-        novoItem.setQuantidade(quantidade);
-        novoItem.setPrecoUnitario(prato.getPrecoVenda()); 
-        novoItem.setObservacao(observacao);
-
-        // 3. Persistir o ItemPedido (importante para evitar problemas de persistência)
-        itemPedidoRepository.save(novoItem);
-        
-        // 4. Adicionar o item à coleção do Pedido (se for bidirecional)
-        if (pedido.getItens() != null) {
-            pedido.getItens().add(novoItem);
-        }
-        
-        // 5. Recalcular o Valor Total do Pedido
-        BigDecimal novoTotal = pedido.getItens().stream()
-                .map(ItemPedido::calcularSubtotal) 
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-                
-        pedido.setValorTotal(novoTotal);
-        
-        // 6. Salvar o pedido (persiste o novo total)
-        pedidoRepository.save(pedido); 
-    }
-    
-    // ===============================================
-    // OUTROS MÉTODOS DO DASHBOARD (MOCK/EXEMPLO)
-    // ===============================================
-
-    /**
-     * MOCK: Retorna pedidos finalizados recentemente para o dashboard.
+     * Busca os 10 pedidos mais recentes fechados (status = false).
      */
     public List<Pedido> buscarPedidosFinalizados() {
-        // Busca os últimos 10 pedidos com status FALSE (fechado)
         return pedidoRepository.findTop10ByStatusOrderByDataPedidoDesc(false);
     }
-    
+
     /**
-     * MOCK: Retorna as transações recentes (pode ser o mesmo que Pedidos Finalizados).
+     * Retorna o top 5 de pratos mais vendidos hoje.
+     * Usa agrupamento de ItemPedido.
      */
-    public List<Pedido> findTransacoesRecentes() {
-        // Por simplificação, retorna os últimos 5 pedidos, abertos ou fechados
-        return pedidoRepository.findTop5ByOrderByDataPedidoDesc(); 
+    public List<Object[]> buscarTopProdutosVendidosHoje() {
+        LocalDateTime inicioDoDia = LocalDate.now().atStartOfDay();
+
+        // Consulta nativa simples: top 5 produtos mais vendidos no dia
+        // Dependendo do banco, você pode criar uma query no repository,
+        // mas aqui faremos uma JPQL simples com EntityManager se necessário.
+        //
+        // Por simplicidade, vamos retornar vazio se não tiver query nativa definida.
+        // (pode adaptar depois para JPQL real)
+        return List.of(); // Placeholder até criar query específica no repositório
     }
 }
