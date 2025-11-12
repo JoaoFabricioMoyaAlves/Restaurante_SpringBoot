@@ -15,18 +15,20 @@
     <thead>
         <tr>
             <th>ID</th>
-            <th>Nome</th>
+            <th>Descrição</th>
+            <th>Valor Unitário</th>
             <th>Unidade de Medida</th>
-            <th>Quantidade em Estoque</th>
+            <th>Qt. em Estoque</th>
             <th>Ações</th>
         </tr>
     </thead>
     <tbody>
         <tr th:each="ingrediente : ${ingredientes}">
             <td th:text="${ingrediente.id}">1</td>
-            <td th:text="${ingrediente.nome}">Arroz</td>
-            <td th:text="${ingrediente.unidadeMedida.nome}">Kg</td>
-            <td th:text="${ingrediente.quantidadeEstoque}">10.000</td>
+            <td th:text="${ingrediente.descricao}">Pão Brioche</td>
+            <td th:text="${ingrediente.valorUnt}">1.50</td>
+            <td th:text="${ingrediente.unidadeMedida.nome}">Un</td>
+            <td th:text="${ingrediente.qtEstoque}">42</td>
             <td>
                 <a th:href="@{'/ingredientes/editar/' + ${ingrediente.id}}">✏️ Editar</a> |
                 <a th:href="@{'/ingredientes/excluir/' + ${ingrediente.id}}"

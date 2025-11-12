@@ -2,35 +2,70 @@ package com.ghost.restaurante_springboot.models;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
 @Entity
 @Table(name = "ingredientes")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class Ingrediente {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // Coluna 'descricao' no banco
-    @Column(name = "descricao", nullable = false, unique = true)
+    // Usa a coluna real 'descricao'
+    @Column(name = "descricao", nullable = false)
     private String descricao;
 
-    // Preço unitário (coluna valor_unt)
+    // Usa a coluna real 'valor_unt'
     @Column(name = "valor_unt", nullable = false, precision = 10, scale = 2)
-    private BigDecimal valorUnt = BigDecimal.ZERO;
+    private BigDecimal valorUnt;
 
-    // Unidade de medida (FK)
+    // Usa a chave estrangeira real 'unidade_medida_id'
     @ManyToOne
     @JoinColumn(name = "unidade_medida_id", nullable = false)
     private UnidadeMedida unidadeMedida;
 
-    // Estoque em banco: qt_estoque
+    // Usa a coluna real 'qt_estoque'
     @Column(name = "qt_estoque", nullable = false, precision = 10, scale = 3)
-    private BigDecimal qtEstoque = BigDecimal.ZERO;
+    private BigDecimal qtEstoque;
+
+    // Getters e Setters
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
+
+    public BigDecimal getValorUnt() {
+        return valorUnt;
+    }
+
+    public void setValorUnt(BigDecimal valorUnt) {
+        this.valorUnt = valorUnt;
+    }
+
+    public UnidadeMedida getUnidadeMedida() {
+        return unidadeMedida;
+    }
+
+    public void setUnidadeMedida(UnidadeMedida unidadeMedida) {
+        this.unidadeMedida = unidadeMedida;
+    }
+
+    public BigDecimal getQtEstoque() {
+        return qtEstoque;
+    }
+
+    public void setQtEstoque(BigDecimal qtEstoque) {
+        this.qtEstoque = qtEstoque;
+    }
 }

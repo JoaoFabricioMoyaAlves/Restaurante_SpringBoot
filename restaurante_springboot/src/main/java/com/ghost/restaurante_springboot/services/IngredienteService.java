@@ -28,4 +28,5 @@ public class IngredienteService {
     public void excluir(Integer id) {
         ingredienteRepository.deleteById(id);
     }
+    
 }
